@@ -4,10 +4,34 @@ import { Chain, ClobClient } from "@polymarket/clob-client";
 import type { ApiKeyCreds } from "@polymarket/clob-client";
 import { Wallet } from "@ethersproject/wallet";
 import { env } from "../config/env";
+import { logger } from "../utils/logger";
+import { getPolymarketProxyWalletAddress } from "../utils/proxyWallet";
 
 // Cache for ClobClient instance to avoid repeated initialization
 let cachedClient: ClobClient | null = null;
-let cachedConfig: { chainId: number; host: string } | null = null;
+let cachedConfig: { chainId: number; host: string; proxyWalletAddress?: string } | null = null;
+
+type RawApiCreds = Partial<ApiKeyCreds> & {
+    apiKey?: string;
+    apiSecret?: string;
+    apiPassphrase?: string;
+};
+
+function normalizeApiCreds(raw: RawApiCreds): ApiKeyCreds {
+    const key = (raw.key || raw.apiKey || "").trim();
+    const secretRaw = (raw.secret || raw.apiSecret || "").trim();
+    const passphrase = (raw.passphrase || raw.apiPassphrase || "").trim();
+
+    if (!key || !secretRaw || !passphrase) {
+        throw new Error(
+            "Invalid credential.json format. Missing key/secret/passphrase. Delete src/data/credential.json and restart to regenerate credentials."
+        );
+    }
+
+    // clob-client expects standard base64; some SDK responses use base64url.
+    const secret = secretRaw.replace(/-/g, "+").replace(/_/g, "/");
+    return { key, secret, passphrase };
+}
 
 /**
  * Initialize ClobClient from credentials (cached singleton)
@@ -21,17 +45,11 @@ export async function getClobClient(): Promise<ClobClient> {
         throw new Error("Credential file not found. Run createCredential() first.");
     }
 
-    const creds: ApiKeyCreds = JSON.parse(readFileSync(credentialPath, "utf-8"));
+    const rawCreds = JSON.parse(readFileSync(credentialPath, "utf-8")) as RawApiCreds;
+    const creds = normalizeApiCreds(rawCreds);
     
     const chainId = env.CHAIN_ID as Chain;
     const host = env.CLOB_API_URL;
-
-    // Return cached client if config hasn't changed
-    if (cachedClient && cachedConfig && 
-        cachedConfig.chainId === chainId && 
-        cachedConfig.host === host) {
-        return cachedClient;
-    }
 
     // Create wallet from private key
     const privateKey = env.PRIVATE_KEY;
@@ -40,21 +58,30 @@ export async function getClobClient(): Promise<ClobClient> {
     }
     const wallet = new Wallet(privateKey);
 
-    // Convert base64url secret to standard base64 for clob-client compatibility
-    const secretBase64 = creds.secret.replace(/-/g, '+').replace(/_/g, '/');
+    const configuredProxy = env.PROXY_WALLET_ADDRESS;
+    let proxyWalletAddress = configuredProxy || undefined;
+    if (!proxyWalletAddress) {
+        try {
+            proxyWalletAddress = await getPolymarketProxyWalletAddress(wallet.address, chainId);
+            logger.info(`Auto-resolved PROXY_WALLET_ADDRESS: ${proxyWalletAddress}`);
+        } catch (error) {
+            logger.warn(
+                `Could not auto-resolve proxy wallet: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
+    }
 
-    // Create API key credentials
-    const apiKeyCreds: ApiKeyCreds = {
-        key: creds.key,
-        secret: secretBase64,
-        passphrase: creds.passphrase,
-    };
+    // Return cached client if config hasn't changed
+    if (cachedClient && cachedConfig && 
+        cachedConfig.chainId === chainId && 
+        cachedConfig.host === host &&
+        cachedConfig.proxyWalletAddress === proxyWalletAddress) {
+        return cachedClient;
+    }
 
-    const proxyWalletAddress = env.PROXY_WALLET_ADDRESS;
-    
     // Create and cache client
-    cachedClient = new ClobClient(host, chainId, wallet, apiKeyCreds, 2, proxyWalletAddress);
-    cachedConfig = { chainId, host };
+    cachedClient = new ClobClient(host, chainId, wallet, creds, 2, proxyWalletAddress);
+    cachedConfig = { chainId, host, proxyWalletAddress };
 
     return cachedClient;
 }

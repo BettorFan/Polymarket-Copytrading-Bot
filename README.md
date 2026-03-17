@@ -27,16 +27,16 @@ That's it. Set it up once, fund your wallet, and let it run.
 
 ### Prerequisites
 
-- **Bun** runtime (v1.0+) — [Install Bun](https://bun.sh)
-- A **Polygon wallet** funded with USDC
+- **Node.js** (v18+ recommended) and **npm**
+- A **Polygon wallet** funded with USDC.e
 - A **target wallet address** — the trader you want to copy
 
 ### Installation
 
 ```bash
 git clone <repository-url>
-cd polymarket-copytrading
-bun install
+cd Polymarket-CopyTrading-Bot
+npm install
 ```
 
 ### Configuration
@@ -50,10 +50,9 @@ PRIVATE_KEY=your_private_key_here
 # The trader you want to copy
 TARGET_WALLET=0x...
 
-# How much to copy (relative to the target's trade size)
-SIZE_MULTIPLIER=0.3
-
-# Safety cap per order (in USDC)
+# Per-target order size used by this bot
+# (if omitted, MAX_ORDER_AMOUNT is used as fallback)
+TARGET_WALLET_ORDER_SIZE=5
 MAX_ORDER_AMOUNT=5
 
 # Auto-redeem winnings every N minutes
@@ -61,6 +60,7 @@ REDEEM_DURATION=15
 
 # Enable/disable the bot
 ENABLE_COPY_TRADING=true
+DRY_RUN=false
 
 # Optional — leave blank for sensible defaults
 ORDER_TYPE=
@@ -75,7 +75,7 @@ CLOB_API_URL=https://clob.polymarket.com
 ### First Run
 
 ```bash
-bun src/index.ts
+npm start
 ```
 
 On the first launch, the bot will automatically generate your Polymarket API credentials and store them locally. After that, it connects to the trade feed and starts monitoring.
@@ -97,10 +97,10 @@ You can find wallet activity on Polymarket's leaderboard or by browsing on-chain
 
 | Variable | What It Does | Example |
 |----------|-------------|---------|
-| `SIZE_MULTIPLIER` | Scales each copied trade relative to the target | `0.3` = 30% of their size |
-| `MAX_ORDER_AMOUNT` | Hard cap per order in USDC | `5` = never spend more than $5 per trade |
+| `TARGET_WALLET_ORDER_SIZE` | Order size used for target wallet(s) | `2` = use 2 as configured size |
+| `MAX_ORDER_AMOUNT` | Fallback size when `TARGET_WALLET_ORDER_SIZE` is not set | `5` |
 
-**Recommended approach**: Start small. Use a low multiplier and a tight max amount while you validate that the target wallet is actually profitable. Scale up once you have confidence.
+**Recommended approach**: Start small. Use a low order size (for example `1` or `2`) while you validate that the target wallet is actually profitable. Scale up once you have confidence.
 
 ### Order Types
 
@@ -125,10 +125,10 @@ When a market resolves and you hold the winning outcome, the bot automatically r
 
 ```bash
 # Start the bot
-bun src/index.ts
-
-# Or via npm
 npm start
+
+# API polling mode (alternative to websocket mode)
+npm run copytrade-api
 ```
 
 Once running, the bot will log every detected trade and every copied order:
@@ -151,17 +151,17 @@ If you don't want to wait for the auto-redemption timer:
 
 ```bash
 # Redeem all resolved positions
-bun src/auto-redeem.ts
+npm run auto-redeem
 
 # Preview what would be redeemed (dry run)
-bun src/auto-redeem.ts --dry-run
+npm run auto-redeem -- --dry-run
 
 # Clear holdings file after redeeming
-bun src/auto-redeem.ts --clear-holdings
+npm run auto-redeem -- --clear-holdings
 
 # Fetch and redeem from API instead of local holdings
-bun src/auto-redeem.ts --api
-bun src/auto-redeem.ts --api --max 500
+npm run auto-redeem -- --api
+npm run auto-redeem -- --api --max 500
 ```
 
 ## How the Bot Manages Your Positions
@@ -169,7 +169,7 @@ bun src/auto-redeem.ts --api --max 500
 ### Buying
 
 When the target wallet buys into a market:
-1. The bot calculates your order size based on `SIZE_MULTIPLIER` and `MAX_ORDER_AMOUNT`.
+1. The bot calculates your order size from config (`TARGET_WALLET_ORDER_SIZE` / `MAX_ORDER_AMOUNT` for env mode, or `src/config/config.json` if you use file-based mode).
 2. It checks your available USDC balance. If you don't have enough, it adjusts the order down.
 3. It handles all token approvals automatically.
 4. After a successful fill, it records the position locally for future sell/redemption tracking.
@@ -193,13 +193,14 @@ When a prediction market resolves:
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `PRIVATE_KEY` | Yes | — | Private key of your trading wallet |
-| `TARGET_WALLET` | Yes | — | Wallet address to copy |
-| `SIZE_MULTIPLIER` | No | `1.0` | Trade size relative to target |
-| `MAX_ORDER_AMOUNT` | No | unlimited | Max USDC per order |
+| `TARGET_WALLET` | Yes* | — | Wallet address to copy (or comma-separated wallets). *Required unless using `src/config/config.json` |
+| `TARGET_WALLET_ORDER_SIZE` | No | `1` | Order size for wallets from `TARGET_WALLET` |
+| `MAX_ORDER_AMOUNT` | No | `1` | Fallback size used when `TARGET_WALLET_ORDER_SIZE` is unset |
 | `ORDER_TYPE` | No | `FAK` | `FAK` or `FOK` |
 | `TICK_SIZE` | No | `0.01` | Price precision |
 | `NEG_RISK` | No | `false` | Allow negative risk orders |
 | `ENABLE_COPY_TRADING` | No | `true` | Toggle copy trading on/off |
+| `DRY_RUN` | No | `true` | Set `false` to place real orders |
 | `REDEEM_DURATION` | No | disabled | Minutes between auto-redemptions |
 | `CHAIN_ID` | No | `137` | Polygon mainnet |
 | `CLOB_API_URL` | No | `https://clob.polymarket.com` | API endpoint |

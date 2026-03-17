@@ -108,7 +108,7 @@ async function main() {
     const TARGET_WALLETS = getTargetWallets();
 
     if (!TARGET_WALLETS.length) {
-        logger.error("❌ No target wallets in src/config/config.json");
+        logger.error("❌ No target wallets configured. Set TARGET_WALLET in .env or add wallets to src/config/config.json.");
         process.exit(1);
     }
     if (!env.PRIVATE_KEY) {

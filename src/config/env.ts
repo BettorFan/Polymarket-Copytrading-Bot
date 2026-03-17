@@ -45,7 +45,26 @@ export const env = {
 
     /** Proxy (smart) wallet address used by Polymarket for this EOA. */
     get PROXY_WALLET_ADDRESS(): string {
-        return process.env.PROXY_WALLET_ADDRESS || "0xcbb677ebf16eb7b1d372499edaf01cb6b083de9b";
+        return process.env.PROXY_WALLET_ADDRESS?.trim() || "";
+    },
+
+    /**
+     * Target wallet(s) to copy from.
+     * Supports one wallet or comma-separated wallets.
+     */
+    get TARGET_WALLET(): string {
+        return process.env.TARGET_WALLET?.trim() || "";
+    },
+
+    /**
+     * Per-target order size used when TARGET_WALLET is provided via .env.
+     * Falls back to MAX_ORDER_AMOUNT for compatibility with older env files.
+     */
+    get TARGET_WALLET_ORDER_SIZE(): number {
+        const raw = process.env.TARGET_WALLET_ORDER_SIZE ?? process.env.MAX_ORDER_AMOUNT;
+        if (!raw) return 1;
+        const n = parseFloat(raw);
+        return Number.isFinite(n) && n > 0 ? n : 1;
     },
 
     // --- RPC ---

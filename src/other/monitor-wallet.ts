@@ -70,7 +70,7 @@ ${"=".repeat(80)}
 }
 
 // Configuration
-const TARGET_WALLET = "0xfdb826a0fb4a90b4cc9049e408ea3ef1b73ae4c9";
+const TARGET_WALLET = env.TARGET_WALLET.split(",")[0]?.trim() || "";
 const WS_HOST = env.USER_REAL_TIME_DATA_URL;
 
 // Initialize log file with header

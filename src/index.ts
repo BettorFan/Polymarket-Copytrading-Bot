@@ -32,7 +32,7 @@ async function main() {
     const WALLET_ORDER_SIZE = getWalletOrderSize();
 
     if (enableCopyTrading && targetCount === 0) {
-        logger.error("No target wallets in src/config/config.json");
+        logger.error("No target wallets configured. Set TARGET_WALLET in .env or add wallets to src/config/config.json.");
         process.exit(1);
     }
 

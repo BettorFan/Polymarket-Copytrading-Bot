@@ -18,6 +18,15 @@ import { startMonitoring as riskManagerStart } from "./risk-manager";
 const CONFIG_PATH = resolve(process.cwd(), "src/config/config.json");
 let WALLET_ORDER_SIZE: Record<string, number> = {};
 let TARGET_WALLETS: string[] = [];
+
+function parseEnvTargetWallets(raw: string): string[] {
+    if (!raw) return [];
+    return raw
+        .split(",")
+        .map((w) => w.trim().toLowerCase())
+        .filter(Boolean);
+}
+
 if (existsSync(CONFIG_PATH)) {
     try {
         const config = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
@@ -28,6 +37,16 @@ if (existsSync(CONFIG_PATH)) {
             }
         }
     } catch (_) {}
+}
+
+const envTargetWallets = parseEnvTargetWallets(env.TARGET_WALLET);
+if (envTargetWallets.length) {
+    WALLET_ORDER_SIZE = {};
+    TARGET_WALLETS = [];
+    for (const wallet of envTargetWallets) {
+        WALLET_ORDER_SIZE[wallet] = env.TARGET_WALLET_ORDER_SIZE;
+    }
+    TARGET_WALLETS = Object.keys(WALLET_ORDER_SIZE);
 }
 
 export function getTargetWallets(): string[] {
