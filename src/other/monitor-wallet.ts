@@ -1,18 +1,3 @@
-#!/usr/bin/env ts-node
-/**
- * Polymarket Wallet Monitor
- * 
- * Monitors a target wallet and displays their trading activity in real-time
- * - Shows what markets they trade
- * - Shows which tokens they buy/sell
- * - Shows amounts and prices
- * - Does NOT copy trades (watch-only mode)
- * 
- * Usage:
- *   ts-node src/monitor-wallet.ts
- *   bun src/monitor-wallet.ts
- */
-
 import { resolve } from "path";
 import { writeFileSync, appendFileSync, existsSync, mkdirSync } from "fs";
 import { RealTimeDataClient } from "@polymarket/real-time-data-client";

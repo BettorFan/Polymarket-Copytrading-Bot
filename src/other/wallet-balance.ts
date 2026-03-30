@@ -1,19 +1,3 @@
-#!/usr/bin/env ts-node
-/**
- * Wallet Balance Utility
- *
- * Prints:
- * - EOA address (from PRIVATE_KEY)
- * - Polymarket proxy wallet address (on-chain)
- * - CLOB USDC balance + allowance
- * - Available USDC (balance minus reserved in open BUY orders)
- * - On-chain USDC balances (EOA + proxy wallet)
- *
- * Usage:
- *   npm run balance
- *   ts-node src/other/wallet-balance.ts
- */
-
 import { Wallet } from "@ethersproject/wallet";
 import { AssetType, Chain } from "@polymarket/clob-client";
 import { env } from "../config/env";

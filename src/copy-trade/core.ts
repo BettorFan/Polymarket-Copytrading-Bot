@@ -1,8 +1,3 @@
-/**
- * Shared copy-trade logic for both API polling and WebSocket.
- * Single source of truth: processTrade(trade). Only trade *fetch* differs per script.
- */
-
 import { resolve } from "path";
 import { writeFileSync, appendFileSync, existsSync, mkdirSync, readFileSync } from "fs";
 import { OrderType, Side, AssetType } from "@polymarket/clob-client";

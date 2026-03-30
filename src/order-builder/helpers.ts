@@ -8,9 +8,6 @@ export function clampPrice(price: number, tickSize: string): number {
     return Math.max(t, Math.min(1 - t, price));
 }
 
-/**
- * Convert trade side string to Side enum
- */
 export function parseTradeSide(side: string): Side {
     const upperSide = side.toUpperCase();
     if (upperSide === "BUY") {

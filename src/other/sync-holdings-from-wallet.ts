@@ -1,17 +1,3 @@
-#!/usr/bin/env ts-node
-
-/**
- * Sync Holdings from Wallet
- * 
- * Queries the blockchain to find all Polymarket tokens in your wallet
- * and formats them in the same structure as token-holding.json
- * 
- * This helps identify any tokens that might be missing from token-holding.json
- * 
- * Usage:
- *   npm run sync-holdings
- */
-
 import { resolve } from "path";
 import { Wallet } from "@ethersproject/wallet";
 import { JsonRpcProvider } from "@ethersproject/providers";

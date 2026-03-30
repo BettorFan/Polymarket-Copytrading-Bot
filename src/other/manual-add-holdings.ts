@@ -1,10 +1,3 @@
-#!/usr/bin/env ts-node
-
-/**
- * Utility script to manually add holdings to token-holding.json
- * Use this if you have existing tokens that weren't tracked by the bot
- */
-
 import { addHoldings, getAllHoldings, loadHoldings } from "../utils/holdings";
 import { logger } from "../utils/logger";
 

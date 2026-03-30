@@ -9,10 +9,6 @@ import { approveTokensAfterBuy, updateClobBalanceAllowance } from "../security/a
 import { validateBuyOrderBalance, validateSellOrderBalance, displayWalletBalance } from "../utils/balance";
 import { env } from "../config/env";
 
-/**
- * Order builder for copying trades
- * Handles conversion of trade data to executable market orders
- */
 export class TradeOrderBuilder {
     private client: ClobClient;
 

@@ -1,9 +1,3 @@
-/**
- * Risk manager: after we buy a token, monitor its price until the next 5-minute clock
- * (0m, 5m, 10m, … 55m). If price drops below SELL_PRICE, sell immediately.
- * Stops at the boundary; restarts when the bot buys again.
- */
-
 import { OrderType, Side, AssetType } from "@polymarket/clob-client";
 import type { ClobClient } from "@polymarket/clob-client";
 import { getClobClient } from "../providers/clobclient";

@@ -1,15 +1,3 @@
-#!/usr/bin/env ts-node
-/**
- * Clear Trade History
- * 
- * Deletes the trade history file to allow re-trading markets
- * Use this if you want to reset and start fresh
- * 
- * Usage:
- *   ts-node src/clear-history.ts
- *   bun src/clear-history.ts
- */
-
 import { resolve } from "path";
 import { existsSync, unlinkSync, readFileSync } from "fs";
 import { logger } from "../utils/logger";
