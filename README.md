@@ -2,6 +2,9 @@
 
 Automatically mirror trades from profitable Polymarket wallets in real time. Pick a winning trader, point the bot at their wallet, and let it replicate every move — buys, sells, and automatic profit redemption.
 
+<img width="1913" height="621" alt="image" src="https://github.com/user-attachments/assets/3f4ead29-5d70-49c7-9ec0-cfb8410669ed" />
+
+
 ## Why Copy Trading Works on Polymarket
 
 Polymarket is a prediction market. The best traders consistently identify mispriced outcomes before the crowd catches on. Their edge comes from research, modeling, and speed — things you can borrow simply by copying their on-chain activity the moment it happens.
