@@ -16,9 +16,6 @@ export class TradeOrderBuilder {
         this.client = client;
     }
 
-    /**
-     * Copy a trade by placing a market order
-     */
     async copyTrade(options: CopyTradeOptions): Promise<CopyTradeResult> {   
         try {
             const { trade, tickSize = "0.01", negRisk = false, orderType = OrderType.FAK } = options;
@@ -40,11 +37,9 @@ export class TradeOrderBuilder {
                     };
                 }
 
-                // Convert trade to desired sell amount (shares) based on sizeMultiplier
                 const desiredOrder = tradeToMarketOrder(options);
                 const desiredSellAmount = Math.max(0, desiredOrder.amount || 0);
 
-                // Cap by holdings (never sell more than we have tracked)
                 const sellAmount = Math.min(holdingsAmount, desiredSellAmount);
 
                 if (sellAmount <= 0) {
@@ -57,11 +52,7 @@ export class TradeOrderBuilder {
                     };
                 }
 
-                // logger.info(
-                //     `Selling tokens: Holdings=${holdingsAmount}, Available=${balanceCheck.available}, Selling=${sellAmount}`
-                // );
 
-                // For SELL, amount is in shares
                 const marketOrder: UserMarketOrder = {
                     tokenID: tokenId,
                     side: Side.SELL,
@@ -80,18 +71,14 @@ export class TradeOrderBuilder {
                     orderType
                 );
 
-                // Check if order was successful
                 if (!response || (response.status && response.status !== "FILLED" && response.status !== "PARTIALLY_FILLED")) {
                     logger.warn(`Order may not have been fully successful. Status: ${response?.status || "unknown"}`);
                 }
 
-                // For SELL orders, makingAmount is tokens sold
-                // Parse the amount (might be in string format with decimals)
                 const tokensSold = response.makingAmount 
                     ? parseFloat(response.makingAmount) 
                     : sellAmount;
 
-                // Remove from holdings after successful sell
                 if (tokensSold > 0) {
                     removeHoldings(marketId, tokenId, tokensSold);
                     logger.info(`✅ Removed ${tokensSold} tokens from holdings: ${marketId} -> ${tokenId}`);
@@ -114,7 +101,6 @@ export class TradeOrderBuilder {
                 };
             }
 
-            // For BUY orders: build order, then place (skip balance/allowance when fixed USDC for speed)
             const marketOrder = tradeToMarketOrder(options);
             const fastPath = options.orderAmountUsdc != null && options.orderAmountUsdc > 0;
 
@@ -134,13 +120,10 @@ export class TradeOrderBuilder {
                 }
             }
 
-            // Get order options
             const orderOptions: Partial<CreateOrderOptions> = getDefaultOrderOptions(tickSize, negRisk);
 
-            // Place the market order
             logger.info(`Placing ${marketOrder.side} market order: ${marketOrder.amount} (type: ${orderType})`);
             
-            // Debug logging (only if DEBUG env var is set)
             if (env.DEBUG) {
                 logger.debug(`marketOrder: ${JSON.stringify(marketOrder)}`);
                 logger.debug(`orderOptions: ${JSON.stringify(orderOptions)}`);
@@ -153,24 +136,18 @@ export class TradeOrderBuilder {
                 orderType
             );
 
-            // Check if order was successful
             if (!response || (response.status && response.status !== "FILLED" && response.status !== "PARTIALLY_FILLED")) {
                 logger.warn(`Order may not have been fully successful. Status: ${response?.status || "unknown"}`);
             }
 
-            // Get the actual filled amount from response
-            // For BUY orders: makingAmount = USDC spent, takingAmount = tokens received
             const tokensReceived = response.takingAmount 
                 ? parseFloat(response.takingAmount) 
                 : 0;
             
-            // Add to holdings after successful buy (only if we received tokens)
             if (tokensReceived > 0) {
                 addHoldings(marketId, tokenId, tokensReceived);
                 logger.info(`✅ Added ${tokensReceived} tokens to holdings: ${marketId} -> ${tokenId}`);
             } else {
-                // Fallback: estimate from order amount if response doesn't have takingAmount
-                // For BUY: amount is USDC, so tokens = USDC / price
                 const estimatedTokens = marketOrder.amount / (trade.price || 1);
                 if (estimatedTokens > 0) {
                     addHoldings(marketId, tokenId, estimatedTokens);
@@ -180,7 +157,6 @@ export class TradeOrderBuilder {
                 }
             }
 
-            // Approve tokens immediately after buying so they can be sold without delay
             try {
                 await approveTokensAfterBuy();
             } catch (error) {
@@ -203,16 +179,13 @@ export class TradeOrderBuilder {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             
-            // If it's a balance/allowance error, show current balance
             if (errorMessage.includes("not enough balance") || errorMessage.includes("allowance")) {
                 logger.error("═══════════════════════════════════════");
                 logger.error("❌ ORDER FAILED: Balance/Allowance Error");
                 logger.error("═══════════════════════════════════════");
                 
-                // Try to display current balance
                 try {
                     await displayWalletBalance(this.client);
-                    // Try updating allowance and retry
                     logger.info("Attempting to update balance allowance...");
                     await this.client.updateBalanceAllowance({ asset_type: AssetType.COLLATERAL });
                 } catch (balanceError) {
